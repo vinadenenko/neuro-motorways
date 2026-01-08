@@ -260,3 +260,37 @@ Train a neural network agent capable of achieving and exceeding high scores in *
 - **CV adapter**: Translates intent → mouse inputs.
 - **Clone adapter**: Translates intent → internal calls.
 
+
+
+# NeuroMotorways Ecosystem Naming Convention
+
+NeuroMotorways is an ecosystem of interconnected projects focused on simulation, game design, and neural agent research inspired by Mini Motorways.
+
+All repositories follow a unified naming convention:
+
+neuro-motorways-component
+
+This ensures consistency, discoverability, and scalability across the ecosystem.
+
+## Core Repositories
+
+| Repository | Purpose |
+|---------|---------|
+| neuro-motorways-core | Deterministic simulation engine (headless, no rendering) |
+| neuro-motorways-clone | Playable Pygame-ce game clone |
+| neuro-motorways-env | Gym-style environment bridge for RL |
+| neuro-motorways-rl | Reinforcement learning agents and training |
+| neuro-motorways-cv | Computer-vision agent for original game |
+| neuro-motorways-tools | Debugging, replay, and analytics tools |
+| neuro-motorways-meta | Multiplayer and meta-progression systems |
+
+## Code Namespace Convention
+
+Python modules use:
+
+Example:
+
+```python
+from nm_core.simulation import World
+from nm_env.gym_env import NeuroMotorwaysEnv
+
