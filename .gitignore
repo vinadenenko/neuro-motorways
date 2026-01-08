@@ -1,0 +1,42 @@
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment directories
+.venv/
+env/
+venv/
+ENV/
+
+# Ignore log, temporary, and cache files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.~*
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Ignore Pygame specific temporary files
+*.mpycache
+output/
+
+# PyCharm files
+.idea/
+*.iml
+/.idea/*
+/.idea_modules/
+
+# OS Generated files
+.DS_Store
+Thumbs.db
+desktop.ini
