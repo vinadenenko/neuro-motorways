@@ -35,6 +35,39 @@ def render(simulation_core, screen):
 
         pygame.draw.line(screen, road_color, start_pixel, end_pixel, 5)  # Draw roads (thicker lines)
 
+    # Draw the houses
+    for house in simulation_core.houses:
+        house_rect = pygame.Rect(
+            house.location[0] * GRID_SIZE + GRID_SIZE // 8,
+            house.location[1] * GRID_SIZE + GRID_SIZE // 8,
+            3 * GRID_SIZE // 4,
+            3 * GRID_SIZE // 4,
+        )
+        pygame.draw.rect(screen, (0, 0, 255), house_rect)  # Blue for houses
+        # Draw number of idle cars
+        font = pygame.font.SysFont(None, 24)
+        img = font.render(str(len(house.idle_cars)), True, (255, 255, 255))
+        screen.blit(img, (house.location[0] * GRID_SIZE + 2, house.location[1] * GRID_SIZE + 2))
+
+    # Draw the shopping centers
+    for sc in simulation_core.shopping_centers:
+        sc_rect = pygame.Rect(
+            sc.location[0] * GRID_SIZE,
+            sc.location[1] * GRID_SIZE,
+            GRID_SIZE,
+            GRID_SIZE,
+        )
+        pygame.draw.rect(screen, (255, 0, 0), sc_rect)  # Red for shopping centers
+        # Draw pins
+        for i, pin in enumerate(sc.pins):
+            pin_rect = pygame.Rect(
+                sc.location[0] * GRID_SIZE + (i % 3) * (GRID_SIZE // 3),
+                sc.location[1] * GRID_SIZE + (i // 3) * (GRID_SIZE // 3),
+                GRID_SIZE // 4,
+                GRID_SIZE // 4,
+            )
+            pygame.draw.circle(screen, (255, 255, 255), pin_rect.center, GRID_SIZE // 8)
+
     # Draw the cars
     for car_data in simulation_core.traffic_manager.get_cars():
         car_position = car_data['position']
@@ -55,16 +88,21 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Traffic Simulation")
 
-    # Set up simulation core
+    # Set up a simulation core
     sim = SimulationCore(SCREEN_WIDTH // GRID_SIZE, SCREEN_HEIGHT // GRID_SIZE)
 
     # Create a simple road network
-    for x in range(9):
-        sim.road_network.add_road((x, 5), (x + 1, 5))
+    # Road from (1, 2) to (8, 2)
+    for x in range(1, 8):
+        sim.road_network.add_road((x, 2), (x + 1, 2))
+        sim.road_network.add_road((x + 1, 2), (x, 2)) # Bidirectional for return
 
-    # Spawn cars
-    sim.spawn_car((0, 5), (9, 5))
-    sim.spawn_car((3, 5), (9, 5))
+    # Add a house and a shopping center
+    sim.add_house((1, 2))
+    sim.add_shopping_center((8, 2))
+
+    # Optional: spawn some manual cars
+    # sim.spawn_car((1, 2), (8, 2))
 
     clock = pygame.time.Clock()
     running = True

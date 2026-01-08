@@ -1,10 +1,12 @@
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, List
 
 from action_parameters_handler import Action
 from game_map_manager import GameMap
 from road_network_manager import RoadNetworkManager
 from traffic_flow_manager import TrafficFlowManager
 from world_state_initialization import WorldState
+from house_car_management import House
+from shopping_center_pin_manager import ShoppingCenter
 
 
 class SimulationCore:
@@ -13,9 +15,12 @@ class SimulationCore:
         self.map = GameMap(width, height)
         self.road_network = RoadNetworkManager()
         self.traffic_manager = TrafficFlowManager(self.road_network)
+        self.houses: List[House] = []
+        self.shopping_centers: List[ShoppingCenter] = []
         self.score = 0
         self.time_elapsed = 0.0
         self.is_game_over = False
+        self.pin_generation_interval = 10  # Generate a pin every 100 steps
 
     def spawn_car(self, start: Tuple[int, int], destination: Tuple[int, int]) -> bool:
         """
@@ -29,6 +34,20 @@ class SimulationCore:
             True if the car was successfully spawned, otherwise False.
         """
         return self.traffic_manager.spawn_car(start, destination)
+
+    def add_house(self, position: Tuple[int, int], car_limit: int = 2):
+        """Adds a house (garage) to the simulation."""
+        house_id = f"house_{len(self.houses)}"
+        house = House(house_id, position, self.traffic_manager, car_limit)
+        self.houses.append(house)
+        self.traffic_manager.houses.append(house)
+
+    def add_shopping_center(self, position: Tuple[int, int]):
+        """Adds a shopping center to the simulation."""
+        sc_id = f"sc_{len(self.shopping_centers)}"
+        shopping_center = ShoppingCenter(sc_id, position)
+        self.shopping_centers.append(shopping_center)
+        self.traffic_manager.shopping_centers.append(shopping_center)
 
     def step(self, action: Optional[Action]) -> Tuple[WorldState, float, bool, Dict]:
         """
@@ -55,6 +74,21 @@ class SimulationCore:
         # Update traffic flow
         self.traffic_manager.update()
 
+        # Update pins and dispatch cars
+        if int(self.time_elapsed) % self.pin_generation_interval == 0 and self.shopping_centers:
+            import random
+            sc = random.choice(self.shopping_centers)
+            sc.generate_pin()
+            
+        # Dispatch cars for pending pins
+        for sc in self.shopping_centers:
+            if sc.pins:
+                # Try to dispatch a car from a house
+                # Simple logic: first house that has an idle car and can reach sc
+                for house in self.houses:
+                    if house.dispatch_car(sc.location):
+                        break
+
         # Update score, check game-over logic, and increment simulation time
         self.time_elapsed += 1
 
@@ -62,7 +96,14 @@ class SimulationCore:
         world_state = WorldState(
             map_data=self.map.grid,
             cars=self.traffic_manager.get_cars(),
-            destinations=[],  # Destinations can be added later
+            destinations=[
+                {
+                    'id': sc.center_id,
+                    'location': sc.location,
+                    'pins': len(sc.pins)
+                }
+                for sc in self.shopping_centers
+            ],
             score=self.score,
             time_elapsed=self.time_elapsed,
             is_game_over=self.is_game_over

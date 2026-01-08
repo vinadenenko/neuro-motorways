@@ -1,8 +1,8 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 
 class Car:
-    def __init__(self, car_id: int, start: Tuple[int, int], destination: Tuple[int, int], path: List[Tuple[int, int]]):
+    def __init__(self, car_id: str, start: Tuple[int, int], destination: Optional[Tuple[int, int]], path: List[Tuple[int, int]]):
         """
         Initialize a car object.
 
@@ -18,6 +18,16 @@ class Car:
         self.path = path
         self.path_index = 0  # Index in the path that the car is currently following.
         self.active = True  # Whether the car is active (reaching the destination or despawned).
+        self.state = "Idle"  # Tracks the car's task-based state
+        self.origin = start  # To know where to return
+
+    def set_route(self, path: List[Tuple[int, int]]):
+        """
+        Assign a route for the car to follow.
+        """
+        self.path = path
+        self.path_index = 0
+        self.active = True
 
     def move(self):
         """
