@@ -1,8 +1,6 @@
-from typing import Tuple, List, Optional
-
-# Graph Operations for Road Networks
 import networkx as nx
 import numpy as np
+from typing import Tuple, List, Optional
 
 
 class RoadNetworkManager:
@@ -12,6 +10,16 @@ class RoadNetworkManager:
         """
         # Underlying graph representing the road network
         self.graph = nx.DiGraph()  # Directed graph for one-way road segments
+
+    @property
+    def roads(self) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+        """
+        A property to retrieve all roads in the network.
+
+        Returns:
+            List of road segments as tuples (start, end).
+        """
+        return list(self.graph.edges())
 
     def add_road(self, start: Tuple[int, int], end: Tuple[int, int]) -> bool:
         """
