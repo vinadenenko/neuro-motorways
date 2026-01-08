@@ -67,100 +67,89 @@ The AI interacts only with the **Simulation Core** through an abstract interface
 
 Both environments implement the same interface
 
-AI Integration
+## AI Integration
 
-PyTorch for neural networks
-
-PPO / custom RL algorithms
-
-Heuristic baseline agents
-
-Curriculum training
-
-Replay and evaluation tools
+- **PyTorch** for neural networks
+- **PPO / custom RL algorithms**
+- **Heuristic baseline agents**
+- **Curriculum training**
+- **Replay and evaluation tools**
 
 The AI never knows whether it is playing:
 
-the clone game
+- the **clone game**
+- or the **real Mini Motorways**
 
-or the real Mini Motorways
+## Game Mechanics To Be Implemented
 
-Game Mechanics Implemented
+- **Grid-based road network**
+- **Houses and buildings with color matching**
+- **Traffic flow and congestion**
+- **Pins and failure timers**
+- **Weekly upgrade choice system**
+- **Resource management**
+- **Deterministic tick-based simulation**
 
-Grid-based road network
-
-Houses and buildings with color matching
-
-Traffic flow and congestion
-
-Pins and failure timers
-
-Weekly upgrade choice system
-
-Resource management
-
-Deterministic tick-based simulation
-
-Event-Driven Simulation
+## Event-Driven Simulation
 
 The simulation emits structured events:
 
-Pin increased / decreased
-
-Upgrade choice required
-
-Upgrade applied
-
-Week passed
-
-Game over
+- **Pin increased / decreased**
+- **Upgrade choice required**
+- **Upgrade applied**
+- **Week passed**
+- **Game over**
 
 UI, AI, and networking consume these events.
 
-Technology Stack
-Area	Choice
-Language	Python
-Rendering	pygame-ce
-AI / ML	PyTorch
-RL	PPO / custom
-CV	OpenCV + PyTorch
-Input Automation	PyAutoGUI / pynput
-Networking (future)	asyncio + websockets
+## Technology Stack
 
-Development Roadmap
-Phase 1
+| Area                | Choice               |
+|---------------------|----------------------|
+| Language            | Python               |
+| Rendering           | pygame-ce            |
+| AI / ML             | PyTorch              |
+| RL                  | PPO / custom         |
+| CV                  | OpenCV + PyTorch     |
+| Input Automation    | PyAutoGUI / pynput   |
+| Networking (future) | asyncio + websockets |
 
-Simulation core
+## Development Roadmap
 
-Minimal playable clone
+**Phase 1**
 
-Phase 2
+- Simulation core
+- Minimal playable clone
 
-UI polish and gameplay parity
+**Phase 2**
 
-Phase 3
+- UI polish and gameplay parity
 
-Heuristic AI agent
+**Phase 3**
 
-Phase 4
+- Heuristic AI agent
 
-RL training integration
+**Phase 4**
 
-Phase 5
+- RL training integration
 
-Vision environment
+**Phase 5**
 
-Phase 6
+- Vision environment
 
-Meta progression and multiplayer experiments
+**Phase 6**
 
-Final Objective
+- Meta progression and multiplayer experiments
 
-Train a neural network agent capable of achieving and exceeding high scores in Mini Motorways using both:
+## Final Objective
 
-a cloned environment
+Train a neural network agent capable of achieving and exceeding high scores in **Mini Motorways** using both:
 
-and the original game via computer vision
+1. A cloned environment
+2. The original game via computer vision
+
+<details>
+<summary>The core idea for implementation (click to expand/collapse):</summary>
 
 +-----------------------------+
 |        Agent Core           |
@@ -180,3 +169,27 @@ and the original game via computer vision
 |  Game Implementation        |
 |  (Clone or Real Game)       |
 +-----------------------------+
+
+</details>
+
+### Key Design Principles
+
+- **One Agent Core**
+- **Multiple World Adapters**
+- **Zero duplication of learning logic**
+
+---
+
+### The Most Important Rule
+
+- The Agent must **never know** how the world is implemented.
+- The Agent only talks to **interfaces**.
+- Actions are **intent-based**, not UI-based.
+
+---
+
+### Adapter Responsibilities
+
+- **CV adapter**: Translates intent → mouse inputs.
+- **Clone adapter**: Translates intent → internal calls.
+
