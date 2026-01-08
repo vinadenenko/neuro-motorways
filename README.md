@@ -65,7 +65,9 @@ The AI interacts only with the **Simulation Core** through an abstract interface
 - Converts observations into the same `WorldState`
 - Converts AI actions into mouse/keyboard input
 
-Both environments implement the same interface
+Both environments implement the same interface.
+
+---
 
 ## AI Integration
 
@@ -80,6 +82,8 @@ The AI never knows whether it is playing:
 - the **clone game**
 - or the **real Mini Motorways**
 
+---
+
 ## Game Mechanics To Be Implemented
 
 - **Grid-based road network**
@@ -89,6 +93,8 @@ The AI never knows whether it is playing:
 - **Weekly upgrade choice system**
 - **Resource management**
 - **Deterministic tick-based simulation**
+
+---
 
 ## Event-Driven Simulation
 
@@ -102,6 +108,8 @@ The simulation emits structured events:
 
 UI, AI, and networking consume these events.
 
+---
+
 ## Technology Stack
 
 | Area                | Choice               |
@@ -113,6 +121,63 @@ UI, AI, and networking consume these events.
 | CV                  | OpenCV + PyTorch     |
 | Input Automation    | PyAutoGUI / pynput   |
 | Networking (future) | asyncio + websockets |
+
+---
+
+## Current Progress
+
+- **Simulation Core**:
+  - The foundation for grid-based roads is in progress, where a road network can connect grid cells.
+  - Visual rendering of roads and a grid system has been implemented, using `pygame-ce` for visualization.
+  - Basic entities like **houses (garages)** and **shopping centers** with pins are being established.
+  - Cars have been introduced and can move between entities (e.g., houses and shopping centers) in a simplistic manner.
+  - Designed a tick-based update loop, where both AI and human players interact within a deterministic simulation.
+
+- **Visual Representation**:
+  - A **grid rendering system** was developed to visualize roads, houses, shopping centers, and cars.
+  - The simulation has a simple step-forward system to animate cars traveling on roads.
+
+- **Upcoming Work**:
+  - Finalize pin-generation logic for shopping centers and implement stateful car behavior (idle, driving, returning).
+  - Introduce proper collision-free car pathfinding and alignment with reinforcement learning data requirements.
+
+---
+
+## Simulation Core Milestone
+
+The **Simulation Core** is the foundation of both environments (clone and vision) and aims to be fully deterministic for reinforcement learning integration. The following features have been designed, implemented, or are planned:
+
+### **Features Designed / Implemented**
+- **Grid-Based Roads**:
+  - Roads consist of connected grid cells, representing paths for cars to navigate.
+  - Grid rendering visually displays roads for debugging and gameplay.
+
+- **Houses (Garages)**:
+  - Houses act as car spawners, and each house starts with a fixed number of cars (2 by default).
+  - Cars are ready to respond when a demand (pin) is raised at a nearby shopping center.
+
+- **Shopping Centers**:
+  - Shopping centers can generate pins, representing customer demands, and cars need to fulfill these demands.
+
+- **Pins and Events**:
+  - Pins increase at shopping centers periodically based on elapsed simulation time.
+  - Event-based simulation logic will dispatch updates such as "pin increased" or "demand fulfilled" for external systems (AI, UI, etc.).
+
+- **Car Movement**:
+  - Cars navigate from a house to a shopping center when a pin is generated.
+  - Cars use a simple stepping mechanism to traverse a path and return after fulfilling the demand.
+
+### **Planned Features**
+- **Traffic Flow and Congestion**:
+  - Cars will account for congestion and adapt routing decisions.
+
+- **Upgradeable Features**:
+  - Weekly upgrades (roads, bridges, tunnels, etc.) will dynamically enhance simulation complexity.
+
+- **Resource Management**:
+  - Cars and roads act as limited resources that must be optimally managed by players or the AI.
+
+---
 
 ## Development Roadmap
 
@@ -140,6 +205,8 @@ UI, AI, and networking consume these events.
 **Phase 6**
 
 - Meta progression and multiplayer experiments
+
+---
 
 ## Final Objective
 
