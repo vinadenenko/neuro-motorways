@@ -17,8 +17,8 @@ def test_traffic_flow():
     car_2_start = (3, 5)
     car_2_dest = (9, 5)
 
-    sim.spawn_car(car_1_start, car_1_dest)  # Add first car
-    sim.spawn_car(car_2_start, car_2_dest)  # Add second car
+    sim.spawn_car(car_1_start, car_1_dest)  # Add a first car
+    sim.spawn_car(car_2_start, car_2_dest)  # Add a second car
 
     # Step 4: Run the simulation for a few steps and print results
     print("Initial Traffic State")

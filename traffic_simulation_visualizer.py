@@ -98,7 +98,7 @@ def main():
         sim.road_network.add_road((x + 1, 2), (x, 2)) # Bidirectional for return
 
     # Add a house and a shopping center
-    sim.add_house((1, 2))
+    sim.add_house((1, 2), car_limit=2)
     sim.add_shopping_center((8, 2))
 
     # Optional: spawn some manual cars
