@@ -124,6 +124,27 @@ UI, AI, and networking consume these events.
 
 ---
 
+## Getting Started
+
+### Prerequisites
+
+- **Python 3.9.13** (The project was tested with this version)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd neuro-motorways
+   ```
+
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+---
+
 ## Current Progress
 
 - **Simulation Core**:
