@@ -6,7 +6,6 @@ class MiniMotorwaysGame:
     def __init__(self, width: int, height: int, difficulty: str = 'medium'):
         self.sim = SimulationCore(width, height)
         self.growth_manager = GrowthManager(self.sim, difficulty=difficulty)
-        self.score = 0
         self.is_running = True
         
         # Initial setup: one shopping center and one house of the same color
@@ -21,11 +20,6 @@ class MiniMotorwaysGame:
         
         # Update growth
         self.growth_manager.update()
-        
-        # Update game score (can be based on fulfilled pins)
-        # For now, let's use the simulation's time or some other metric if we have one
-        # Actually, let's track score based on pin fulfillment. 
-        # We need to expose fulfilled pins from simulation.
         
         if done:
             self.is_running = False
