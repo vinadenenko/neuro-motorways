@@ -66,11 +66,14 @@ class RoadNetworkManager:
         Returns:
             List of tuples representing the shortest path if one exists, else None.
         """
+        if start not in self.graph or destination not in self.graph:
+            return None
+
         try:
             path = nx.shortest_path(self.graph, source=start, target=destination, weight='weight')
             return path
         except nx.NetworkXNoPath:
-            return None  # No path available
+            return None
 
     def is_connected(self, start: Tuple[int, int], end: Tuple[int, int]) -> bool:
         """
