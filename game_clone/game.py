@@ -3,16 +3,14 @@ from game_clone.growth_manager import GrowthManager
 from action_parameters_handler import Action
 
 class MiniMotorwaysGame:
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, difficulty: str = 'medium'):
         self.sim = SimulationCore(width, height)
-        self.growth_manager = GrowthManager(self.sim)
+        self.growth_manager = GrowthManager(self.sim, difficulty=difficulty)
         self.score = 0
         self.is_running = True
         
-        # Initial setup: one shopping center and two houses of the same color
+        # Initial setup: one shopping center and one house of the same color
         self.growth_manager.spawn_shopping_center()
-        self.growth_manager.spawn_house()
-        self.growth_manager.spawn_house()
         
     def step(self, action=None):
         if not self.is_running:
