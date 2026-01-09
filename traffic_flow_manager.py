@@ -55,105 +55,128 @@ class TrafficFlowManager:
         """
         cars_to_remove = []
         
-        # Track occupied positions and their directions to handle two-sided roads and traffic jams
-        # occupied maps (position, next_position) -> car_id
-        occupied = {}
-
-        # First, mark current positions as occupied (where they ARE now and where they are HEADED)
-        for car in self.cars.values():
+        # We need a snapshot of where cars are and where they want to go
+        # to make movement decisions without partial updates affecting other cars in the same step.
+        
+        # (position, next_position) -> car_id
+        # This represents the segment a car is CURRENTLY occupying.
+        current_segments = {}
+        for car_id, car in self.cars.items():
             if car.active:
                 next_pos = car.get_next_position()
-                occupied[(car.position, next_pos)] = car.car_id
+                current_segments[(car.position, next_pos)] = car_id
 
-        # To avoid cars from different directions overlapping on the same tile at intersections
-        # we track which tiles are "claimed" for entry in this step.
-        tile_claims = {} # next_pos -> car_id
+        # To ensure fairness and avoid fixed-priority deadlocks, randomize processing order
+        import random
+        car_ids = list(self.cars.keys())
+        random.shuffle(car_ids)
 
-        for car_id, car in self.cars.items():
+        # tile_claims: next_pos -> car_id (who is allowed to enter this tile this step)
+        tile_claims = {}
+        
+        # moved_cars: car_ids that have successfully moved this step
+        moved_cars = set()
+
+        # We might need multiple passes if a car moving frees up space for another car
+        # BUT in this simulation, if car A moves from tile 1 to tile 2, car B can move from tile 0 to tile 1
+        # in the SAME step. This is handled by checking if the TARGET segment is occupied.
+        # If car A is at (1,1) moving to (1,2), its current segment is ((1,1), (1,2)).
+        # If car B is at (1,0) moving to (1,1), its target segment is ((1,1), (1,2)).
+        # Wait, that's not right. 
+        # If car A moves, ((1,1), (1,2)) becomes its new current segment.
+        # Car B's target segment is ((1,1), (something)).
+        
+        # Let's simplify: 
+        # A car at `pos` moving to `next_pos` wants to occupy segment `(next_pos, next_next_pos)`.
+        # It is blocked if:
+        # 1. Someone is already in `(next_pos, next_next_pos)`.
+        # 2. Someone is at `next_pos` and NOT moving out in the same step (or moving opposite).
+        
+        # Actually, the sequential update with `occupied` mutation was almost correct for fluid movement, 
+        # but the order and the collision logic were flawed.
+        
+        # Let's use the current positions but be careful about intersections.
+        
+        occupied_segments = current_segments.copy()
+        tile_occupied_by = {car.position: car_id for car_id, car in self.cars.items() if car.active}
+
+        for car_id in car_ids:
+            car = self.cars[car_id]
             if not car.active:
                 continue
 
             next_pos = car.get_next_position()
             if next_pos:
-                # Find what would be the car's NEXT segment if it moved
                 next_next_pos = None
                 if car.path_index + 1 < len(car.path):
                     next_next_pos = car.path[car.path_index + 1]
                 
                 target_segment = (next_pos, next_next_pos)
-                
-                # COLLISION LOGIC:
-                # 1. Is the target segment occupied? (Directly following someone)
-                # 2. Is the target tile being entered by someone else from a DIFFERENT direction?
-                #    (Wait, if it's a two-sided road, someone can enter from OPPOSITE direction safely)
+                my_dir = (next_pos[0] - car.position[0], next_pos[1] - car.position[1])
                 
                 is_blocked = False
                 
-                # Check segment occupancy (standard queueing)
-                for seg, other_car_id in occupied.items():
-                    if other_car_id != car_id and seg == target_segment:
+                # 1. Segment occupancy (Queueing)
+                # If someone is in our target segment, we are blocked.
+                if target_segment in occupied_segments:
+                    is_blocked = True
+                
+                # 2. Tile occupancy (Intersection / Entry)
+                if not is_blocked and next_pos in tile_occupied_by:
+                    other_car_id = tile_occupied_by[next_pos]
+                    other_car = self.cars[other_car_id]
+                    other_next = other_car.get_next_position()
+                    
+                    if other_next is None:
+                        # They are at their destination
                         is_blocked = True
-                        break
-                
-                # Check intersection conflict:
-                # If someone else is ALREADY on next_pos AND they are NOT moving in the opposite direction of us.
-                # Our direction: (next_pos[0] - position[0], next_pos[1] - position[1])
-                # Their direction: (seg[1][0] - seg[0][0], seg[1][1] - seg[0][1]) if seg[1] exists
-                
-                my_dir = (next_pos[0] - car.position[0], next_pos[1] - car.position[1])
-                
-                if not is_blocked:
-                    for (other_pos, other_next), other_car_id in occupied.items():
-                        if other_car_id == car_id: continue
-                        if other_pos == next_pos:
-                            # Someone is on the tile we want to enter.
-                            if other_next is None:
-                                # They are at their destination, so they are blocking the tile.
-                                is_blocked = True
-                                break
-                            
-                            other_dir = (other_next[0] - other_pos[0], other_next[1] - other_pos[1])
-                            # Opposite check: my_dir == (-other_dir[0], -other_dir[1])
-                            if my_dir != (-other_dir[0], -other_dir[1]):
-                                # They are not moving opposite to us (e.g. they are moving perpendicular or same)
-                                # Actually if they are moving same direction, they should be covered by segment check,
-                                # but they are ALREADY on the tile, so they are in segment (next_pos, other_next).
-                                # If my target segment is (next_pos, next_next_pos) and they are in (next_pos, other_next),
-                                # and next_next_pos != other_next, it means we are turning differently or they are at an intersection.
-                                is_blocked = True
-                                break
-
-                # 3. Conflict with other cars TRYING to move to the same tile this step (priority)
-                if not is_blocked:
-                    if next_pos in tile_claims:
-                        other_car_id = tile_claims[next_pos]
-                        other_car = self.cars[other_car_id]
-                        other_dir = (next_pos[0] - other_car.position[0], next_pos[1] - other_car.position[1])
+                    else:
+                        other_dir = (other_next[0] - next_pos[0], other_next[1] - next_pos[1])
+                        # Opposite check
                         if my_dir != (-other_dir[0], -other_dir[1]):
                             is_blocked = True
+                
+                # 3. Conflict with others wanting the same tile
+                if not is_blocked and next_pos in tile_claims:
+                    other_car_id = tile_claims[next_pos]
+                    other_car = self.cars[other_car_id]
+                    other_dir = (next_pos[0] - other_car.position[0], next_pos[1] - other_car.position[1])
+                    if my_dir != (-other_dir[0], -other_dir[1]):
+                        is_blocked = True
 
                 if not is_blocked:
-                    # Claim the tile for this step
+                    # SUCCESS! Move the car
                     tile_claims[next_pos] = car_id
                     
-                    # Before moving, remove old occupancy and add new one
-                    old_segment = (car.position, next_pos)
-                    if old_segment in occupied:
-                        del occupied[old_segment]
+                    # Update tracking
+                    old_pos = car.position
+                    old_segment = (old_pos, next_pos)
+                    
+                    if old_segment in occupied_segments:
+                        del occupied_segments[old_segment]
+                    if old_pos in tile_occupied_by:
+                        del tile_occupied_by[old_pos]
                     
                     car.move()
                     car.waiting = False
                     
-                    # Update occupancy with new position
+                    # New state
                     new_next = car.get_next_position()
-                    occupied[(car.position, new_next)] = car.car_id
+                    occupied_segments[(car.position, new_next)] = car.car_id
+                    tile_occupied_by[car.position] = car.car_id
                 else:
                     car.waiting = True
             else:
                 # Car reached destination tile in its current path
-                car.move() # This will set active=False
+                # Despawn/State change handled below
+                car.move() # active=False
+                # Update tracking so someone can move into the tile we just vacated (if we were at destination)
+                # Wait, car.move() here sets car.active = False.
+                # We should probably clear it from tile_occupied_by if it was there.
+                if car.position in tile_occupied_by:
+                     del tile_occupied_by[car.position]
             
-            # Check if the car has finished its journey
+            # Post-move logic (Arrivals)
             if not car.active:
                 if car.state == "ToShoppingCenter":
                     # Car arrived at shopping center, fulfill pin and return home
