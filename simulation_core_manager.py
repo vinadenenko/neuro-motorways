@@ -75,7 +75,7 @@ class SimulationCore:
         self.traffic_manager.update()
 
         # Update pins and dispatch cars
-        if int(self.time_elapsed) % self.pin_generation_interval == 0 and self.shopping_centers:
+        if self.pin_generation_interval > 0 and int(self.time_elapsed) > 0 and int(self.time_elapsed) % self.pin_generation_interval == 0 and self.shopping_centers:
             import random
             sc = random.choice(self.shopping_centers)
             sc.generate_pin()

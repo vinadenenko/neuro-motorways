@@ -18,7 +18,7 @@ COLOR_MAP = {
     "black": (0, 0, 0)
 }
 
-def render(sim, screen, font):
+def render(sim, screen, font, world_state):
     screen.fill(COLOR_MAP["bg"])
     
     # Draw roads
@@ -39,7 +39,6 @@ def render(sim, screen, font):
         pygame.draw.rect(screen, COLOR_MAP.get(sc.color, (0,0,0)), rect)
 
     # Draw cars
-    world_state = sim.step(None)[0]
     # Sort cars by ID to make rendering consistent
     sorted_cars = sorted(world_state.cars, key=lambda x: x['car_id'])
     for car_data in sorted_cars:
@@ -142,6 +141,7 @@ def main():
 
     running = True
     step_count = 0
+    total_generated = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -152,8 +152,11 @@ def main():
             for sc in sim.shopping_centers:
                 for _ in range(8):
                     sc.generate_pin()
+                    total_generated += 1
+            print(f"Total pins generated manually: {total_generated}")
 
-        render(sim, screen, font)
+        world_state, _, _, _ = sim.step(None)
+        render(sim, screen, font, world_state)
         step_count += 1
         clock.tick(FPS)
         
@@ -163,9 +166,14 @@ def main():
             total_fulfilled = sum(sc.fulfilled_counter for sc in sim.shopping_centers)
             print(f"Step {step_count}: Pending Pins={total_pins}, Fulfilled={total_fulfilled}")
 
-        if step_count > 400: # Increased to 400 steps
+        if step_count > 150: # Increased to 400 steps
             running = False
 
+    final_fulfilled = sum(sc.fulfilled_counter for sc in sim.shopping_centers)
+    print(f"Final Report: Generated={total_generated}, Fulfilled={final_fulfilled}")
+    if final_fulfilled > total_generated:
+        print("WARNING: More pins fulfilled than manually generated! Checking for automatic generation...")
+    
     pygame.quit()
 
 if __name__ == "__main__":
