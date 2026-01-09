@@ -1,11 +1,11 @@
 from typing import Tuple, List, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from house_car_management import House
-    from shopping_center_pin_manager import ShoppingCenter
+    from nm_core.entities.house import House
+    from nm_core.entities.shopping_center import ShoppingCenter
 
-from car_movement_controller import Car
-from road_network_manager import RoadNetworkManager
+from nm_core.entities.car import Car
+from nm_core.simulation.road_network import RoadNetworkManager
 
 
 class TrafficFlowManager:

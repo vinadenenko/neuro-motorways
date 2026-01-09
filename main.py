@@ -1,5 +1,5 @@
 
-from game_clone.visualizer import GameVisualizer
+from nm_clone.visualizer import GameVisualizer
 
 def main() -> None:
     vis = GameVisualizer()

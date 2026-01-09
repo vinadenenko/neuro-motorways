@@ -1,12 +1,13 @@
 from typing import Tuple, Dict, Optional, List
 
-from action_parameters_handler import Action
-from game_map_manager import GameMap
-from road_network_manager import RoadNetworkManager
-from traffic_flow_manager import TrafficFlowManager
-from world_state_initialization import WorldState
-from house_car_management import House
-from shopping_center_pin_manager import ShoppingCenter
+from nm_common.actions import Action
+from nm_core.simulation.map import GameMap
+from nm_core.simulation.road_network import RoadNetworkManager
+from nm_core.simulation.traffic import TrafficFlowManager
+from nm_core.simulation.world_state import WorldState
+from nm_core.entities.house import House
+from nm_core.entities.shopping_center import ShoppingCenter
+from nm_common.constants import PIN_GENERATION_INTERVAL
 
 
 class SimulationCore:
@@ -20,7 +21,7 @@ class SimulationCore:
         self.score = 0
         self.time_elapsed = 0.0
         self.is_game_over = False
-        self.pin_generation_interval = 10  # Generate a pin every 100 steps
+        self.pin_generation_interval = PIN_GENERATION_INTERVAL  # Generate a pin every 10 steps
 
     def spawn_car(self, start: Tuple[int, int], destination: Tuple[int, int]) -> bool:
         """

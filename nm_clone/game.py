@@ -1,6 +1,6 @@
-from simulation_core_manager import SimulationCore
-from game_clone.growth_manager import GrowthManager
-from action_parameters_handler import Action
+from nm_core.simulation.core import SimulationCore
+from nm_clone.growth import GrowthManager
+from nm_common.actions import Action
 
 class MiniMotorwaysGame:
     def __init__(self, width: int, height: int, difficulty: str = 'medium'):

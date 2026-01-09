@@ -1,12 +1,13 @@
 # entities/house.py
 from typing import Tuple, List, Optional, TYPE_CHECKING
-from car_movement_controller import Car
+from nm_core.entities.car import Car
+from nm_common.constants import DEFAULT_CAR_LIMIT
 
 if TYPE_CHECKING:
-    from traffic_flow_manager import TrafficFlowManager
+    from nm_core.simulation.traffic import TrafficFlowManager
 
 class House:
-    def __init__(self, house_id: str, location: Tuple[int, int], traffic_manager: 'TrafficFlowManager', color: str = "red", car_count: int = 2):
+    def __init__(self, house_id: str, location: Tuple[int, int], traffic_manager: 'TrafficFlowManager', color: str = "red", car_count: int = DEFAULT_CAR_LIMIT):
         """
         Initialize a house object (garage).
 

@@ -1,6 +1,8 @@
 import random
 from typing import Tuple, List
 
+from nm_common.constants import ESTIMATED_RTT
+
 class GrowthManager:
     def __init__(self, simulation_core, difficulty: str = 'medium'):
         self.sim = simulation_core
@@ -40,7 +42,7 @@ class GrowthManager:
         """
         needs = {}
         pin_rate = 1.0 / self.sim.pin_generation_interval
-        estimated_rtt = 40.0 # Estimated round trip steps
+        estimated_rtt = ESTIMATED_RTT # Estimated round trip steps
         car_capacity = 1.0 / estimated_rtt
         
         for color in self.active_colors:

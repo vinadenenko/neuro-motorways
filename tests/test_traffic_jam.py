@@ -1,22 +1,10 @@
 import pygame
 import sys
 import time
-from simulation_core_manager import SimulationCore
+from nm_core.simulation.core import SimulationCore
+from nm_common.constants import GRID_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, COLOR_MAP
 
-# Constants
-GRID_SIZE = 40
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
 FPS = 5
-
-COLOR_MAP = {
-    "red": (255, 0, 0),
-    "blue": (0, 0, 255),
-    "gray": (100, 100, 100),
-    "bg": (230, 230, 220),
-    "white": (255, 255, 255),
-    "black": (0, 0, 0)
-}
 
 def render(sim, screen, font, world_state):
     screen.fill(COLOR_MAP["bg"])

@@ -1,25 +1,7 @@
 import pygame
 import sys
-from game_clone.game import MiniMotorwaysGame
-
-# Constants
-GRID_SIZE = 40
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-FPS = 15
-
-# Color Map
-COLOR_MAP = {
-    "red": (255, 0, 0),
-    "blue": (0, 0, 255),
-    "green": (0, 255, 0),
-    "yellow": (255, 255, 0),
-    "purple": (128, 0, 128),
-    "gray": (100, 100, 100),
-    "black": (0, 0, 0),
-    "white": (255, 255, 255),
-    "bg": (230, 230, 220)
-}
+from nm_clone.game import MiniMotorwaysGame
+from nm_common.constants import GRID_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_MAP
 
 class GameVisualizer:
     def __init__(self):

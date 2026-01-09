@@ -1,6 +1,8 @@
 # entities/shopping_center.py
 from typing import Tuple, List
 
+from nm_common.constants import MAX_PINS_LIMIT, FAILURE_THRESHOLD_SECONDS
+
 class ShoppingCenter:
     def __init__(self, center_id: str, location: Tuple[int, int], color: str = "red"):
         """
@@ -19,7 +21,7 @@ class ShoppingCenter:
         self.pin_counter = 0
         self.fulfilled_counter = 0
         self.failure_timer = 0.0
-        self.max_pins = 10
+        self.max_pins = MAX_PINS_LIMIT
         self.is_failing = False
 
     def generate_pin(self) -> int:
@@ -61,6 +63,6 @@ class ShoppingCenter:
         """
         if self.is_failing:
             self.failure_timer += dt
-            if self.failure_timer >= 60.0:  # 60 seconds of failure leads to game over
+            if self.failure_timer >= FAILURE_THRESHOLD_SECONDS:  # 60 seconds of failure leads to game over
                 return True
         return False

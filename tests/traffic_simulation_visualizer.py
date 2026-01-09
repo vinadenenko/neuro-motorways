@@ -1,6 +1,6 @@
 import pygame
 import time
-from simulation_core_manager import SimulationCore
+from nm_core.simulation.core import  SimulationCore
 
 # Initialize Pygame-CE settings
 GRID_SIZE = 40  # Size of each grid square in pixels
