@@ -1,6 +1,7 @@
 import pygame
 import time
-from nm_core.simulation.core import  SimulationCore
+from nm_core.simulation.core import SimulationCore
+from nm_common.constants import COLOR_MAP
 
 # Initialize Pygame-CE settings
 GRID_SIZE = 40  # Size of each grid square in pixels
@@ -18,7 +19,7 @@ def render(simulation_core, screen):
         simulation_core: The simulation core instance running the backend logic.
         screen: The Pygame screen to draw on.
     """
-    screen.fill((0, 0, 0))  # Clear the screen with a black background
+    screen.fill(COLOR_MAP["black"])  # Clear the screen with a black background
 
     # Draw the grid
     for x in range(0, SCREEN_WIDTH, GRID_SIZE):
@@ -29,7 +30,7 @@ def render(simulation_core, screen):
     # Draw the roads
     for road_segment in simulation_core.road_network.roads:
         start, end = road_segment
-        road_color = (100, 100, 100)
+        road_color = COLOR_MAP["gray"]
         start_pixel = (start[0] * GRID_SIZE + GRID_SIZE // 2, start[1] * GRID_SIZE + GRID_SIZE // 2)
         end_pixel = (end[0] * GRID_SIZE + GRID_SIZE // 2, end[1] * GRID_SIZE + GRID_SIZE // 2)
 
@@ -43,10 +44,11 @@ def render(simulation_core, screen):
             3 * GRID_SIZE // 4,
             3 * GRID_SIZE // 4,
         )
-        pygame.draw.rect(screen, (0, 0, 255), house_rect)  # Blue for houses
+        color = COLOR_MAP.get(house.color, (0, 0, 255))
+        pygame.draw.rect(screen, color, house_rect)
         # Draw number of idle cars
         font = pygame.font.SysFont(None, 24)
-        img = font.render(str(len(house.idle_cars)), True, (255, 255, 255))
+        img = font.render(str(len(house.idle_cars)), True, COLOR_MAP["white"])
         screen.blit(img, (house.location[0] * GRID_SIZE + 2, house.location[1] * GRID_SIZE + 2))
 
     # Draw the shopping centers
@@ -57,7 +59,8 @@ def render(simulation_core, screen):
             GRID_SIZE,
             GRID_SIZE,
         )
-        pygame.draw.rect(screen, (255, 0, 0), sc_rect)  # Red for shopping centers
+        color = COLOR_MAP.get(sc.color, (255, 0, 0))
+        pygame.draw.rect(screen, color, sc_rect)
         # Draw pins
         for i, pin in enumerate(sc.pins):
             pin_rect = pygame.Rect(
@@ -66,7 +69,7 @@ def render(simulation_core, screen):
                 GRID_SIZE // 4,
                 GRID_SIZE // 4,
             )
-            pygame.draw.circle(screen, (255, 255, 255), pin_rect.center, GRID_SIZE // 8)
+            pygame.draw.circle(screen, COLOR_MAP["white"], pin_rect.center, GRID_SIZE // 8)
 
     # Draw the cars
     for car_data in simulation_core.traffic_manager.get_cars():
@@ -77,7 +80,10 @@ def render(simulation_core, screen):
             GRID_SIZE // 2,
             GRID_SIZE // 2,
         )
-        pygame.draw.rect(screen, (0, 255, 0), car_rect)  # Green square for cars
+        color = COLOR_MAP.get(car_data.get('color', 'green'), (0, 255, 0))
+        pygame.draw.rect(screen, color, car_rect)
+        if car_data.get('waiting', False):
+            pygame.draw.rect(screen, COLOR_MAP["white"], car_rect, 2)
 
 
 # Main function to run the visualization
@@ -123,15 +129,15 @@ def main():
         add_bi_road((15, y), (15, y + 1))
     
     # Houses
-    sim.add_house((2, 5), car_limit=2)
-    sim.add_house((5, 2), car_limit=2)
-    sim.add_house((15, 2), car_limit=3)
-    sim.add_house((10, 12), car_limit=2)
+    sim.add_house((2, 5), color="red", car_limit=2)
+    sim.add_house((5, 2), color="red", car_limit=2)
+    sim.add_house((15, 2), color="blue", car_limit=3)
+    sim.add_house((10, 12), color="blue", car_limit=2)
 
     # Shopping Centers
-    sim.add_shopping_center((18, 5))
-    sim.add_shopping_center((5, 12))
-    sim.add_shopping_center((15, 12))
+    sim.add_shopping_center((18, 5), color="red")
+    sim.add_shopping_center((5, 12), color="blue")
+    sim.add_shopping_center((15, 12), color="blue")
 
     clock = pygame.time.Clock()
     running = True

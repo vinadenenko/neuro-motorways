@@ -1,5 +1,4 @@
-from simulation_core_manager import SimulationCore
-
+from nm_core.simulation.core import  SimulationCore
 
 def test_traffic_flow():
     # Step 1: Initialize the simulation core
