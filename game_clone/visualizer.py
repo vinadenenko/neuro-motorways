@@ -116,11 +116,38 @@ class GameVisualizer:
         # Draw cars
         for car_data in world_state.cars:
             pos = car_data['position']
-            # We need color for car too, but world_state.cars currently doesn't have it.
-            # Let's find the car in traffic manager for now or just draw green
-            px = pos[0] * GRID_SIZE + GRID_SIZE // 4
-            py = pos[1] * GRID_SIZE + GRID_SIZE // 4
-            pygame.draw.rect(self.screen, (0, 200, 0), (px, py, GRID_SIZE // 2, GRID_SIZE // 2))
+            prev_pos = car_data.get('previous_position', pos)
+            next_pos = car_data.get('next_position')
+            
+            # Determine direction for offset
+            # We want to draw the car on the "right" side of the road
+            # Based on the vector (prev_pos -> pos) or (pos -> next_pos)
+            
+            if next_pos:
+                direction = (next_pos[0] - pos[0], next_pos[1] - pos[1])
+            elif pos != prev_pos:
+                direction = (pos[0] - prev_pos[0], pos[1] - prev_pos[1])
+            else:
+                direction = (0, 0)
+            
+            # Perpendicular vector for offset (right side)
+            # If dir is (dx, dy), right-hand perpendicular is (-dy, dx)
+            offset_scale = 6
+            offset_x = -direction[1] * offset_scale
+            offset_y = direction[0] * offset_scale
+            
+            # Also if car is waiting, maybe change color or draw something
+            car_color = COLOR_MAP.get(car_data.get('color', 'green'), (0, 200, 0))
+            if car_data.get('waiting', False):
+                # Make it darker or add an outline
+                car_color = tuple(max(0, c - 50) for c in car_color)
+
+            px = pos[0] * GRID_SIZE + GRID_SIZE // 2 - 5 + offset_x
+            py = pos[1] * GRID_SIZE + GRID_SIZE // 2 - 5 + offset_y
+            
+            pygame.draw.rect(self.screen, car_color, (px, py, 10, 10))
+            if car_data.get('waiting', False):
+                pygame.draw.rect(self.screen, (255, 255, 255), (px, py, 10, 10), 1)
 
         # Draw UI
         score_txt = self.font.render(f"Score: {world_state.score}", True, (0, 0, 0))

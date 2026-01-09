@@ -51,12 +51,107 @@ class TrafficFlowManager:
 
     def update(self):
         """
-        Updates all cars by moving them along their respective paths.
+        Updates all cars by moving them along their respective paths, considering traffic and directions.
         """
         cars_to_remove = []
+        
+        # Track occupied positions and their directions to handle two-sided roads and traffic jams
+        # occupied maps (position, next_position) -> car_id
+        occupied = {}
+
+        # First, mark current positions as occupied (where they ARE now and where they are HEADED)
+        for car in self.cars.values():
+            if car.active:
+                next_pos = car.get_next_position()
+                occupied[(car.position, next_pos)] = car.car_id
+
+        # To avoid cars from different directions overlapping on the same tile at intersections
+        # we track which tiles are "claimed" for entry in this step.
+        tile_claims = {} # next_pos -> car_id
+
         for car_id, car in self.cars.items():
-            # Update car's position
-            car.move()
+            if not car.active:
+                continue
+
+            next_pos = car.get_next_position()
+            if next_pos:
+                # Find what would be the car's NEXT segment if it moved
+                next_next_pos = None
+                if car.path_index + 1 < len(car.path):
+                    next_next_pos = car.path[car.path_index + 1]
+                
+                target_segment = (next_pos, next_next_pos)
+                
+                # COLLISION LOGIC:
+                # 1. Is the target segment occupied? (Directly following someone)
+                # 2. Is the target tile being entered by someone else from a DIFFERENT direction?
+                #    (Wait, if it's a two-sided road, someone can enter from OPPOSITE direction safely)
+                
+                is_blocked = False
+                
+                # Check segment occupancy (standard queueing)
+                for seg, other_car_id in occupied.items():
+                    if other_car_id != car_id and seg == target_segment:
+                        is_blocked = True
+                        break
+                
+                # Check intersection conflict:
+                # If someone else is ALREADY on next_pos AND they are NOT moving in the opposite direction of us.
+                # Our direction: (next_pos[0] - position[0], next_pos[1] - position[1])
+                # Their direction: (seg[1][0] - seg[0][0], seg[1][1] - seg[0][1]) if seg[1] exists
+                
+                my_dir = (next_pos[0] - car.position[0], next_pos[1] - car.position[1])
+                
+                if not is_blocked:
+                    for (other_pos, other_next), other_car_id in occupied.items():
+                        if other_car_id == car_id: continue
+                        if other_pos == next_pos:
+                            # Someone is on the tile we want to enter.
+                            if other_next is None:
+                                # They are at their destination, so they are blocking the tile.
+                                is_blocked = True
+                                break
+                            
+                            other_dir = (other_next[0] - other_pos[0], other_next[1] - other_pos[1])
+                            # Opposite check: my_dir == (-other_dir[0], -other_dir[1])
+                            if my_dir != (-other_dir[0], -other_dir[1]):
+                                # They are not moving opposite to us (e.g. they are moving perpendicular or same)
+                                # Actually if they are moving same direction, they should be covered by segment check,
+                                # but they are ALREADY on the tile, so they are in segment (next_pos, other_next).
+                                # If my target segment is (next_pos, next_next_pos) and they are in (next_pos, other_next),
+                                # and next_next_pos != other_next, it means we are turning differently or they are at an intersection.
+                                is_blocked = True
+                                break
+
+                # 3. Conflict with other cars TRYING to move to the same tile this step (priority)
+                if not is_blocked:
+                    if next_pos in tile_claims:
+                        other_car_id = tile_claims[next_pos]
+                        other_car = self.cars[other_car_id]
+                        other_dir = (next_pos[0] - other_car.position[0], next_pos[1] - other_car.position[1])
+                        if my_dir != (-other_dir[0], -other_dir[1]):
+                            is_blocked = True
+
+                if not is_blocked:
+                    # Claim the tile for this step
+                    tile_claims[next_pos] = car_id
+                    
+                    # Before moving, remove old occupancy and add new one
+                    old_segment = (car.position, next_pos)
+                    if old_segment in occupied:
+                        del occupied[old_segment]
+                    
+                    car.move()
+                    car.waiting = False
+                    
+                    # Update occupancy with new position
+                    new_next = car.get_next_position()
+                    occupied[(car.position, new_next)] = car.car_id
+                else:
+                    car.waiting = True
+            else:
+                # Car reached destination tile in its current path
+                car.move() # This will set active=False
             
             # Check if the car has finished its journey
             if not car.active:
@@ -108,8 +203,12 @@ class TrafficFlowManager:
             {
                 'car_id': car.car_id,
                 'position': car.position,
+                'previous_position': car.previous_position,
+                'next_position': car.get_next_position(),
                 'destination': car.destination,
-                'active': car.active
+                'active': car.active,
+                'color': car.color,
+                'waiting': car.waiting
             }
             for car in self.cars.values()
         ]

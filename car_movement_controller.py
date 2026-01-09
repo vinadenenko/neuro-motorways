@@ -14,6 +14,7 @@ class Car:
         """
         self.car_id = car_id
         self.position = start
+        self.previous_position = start
         self.destination = destination
         self.path = path
         self.path_index = 0  # Index in the path that the car is currently following.
@@ -21,6 +22,7 @@ class Car:
         self.state = "Idle"  # Tracks the car's task-based state
         self.origin = start  # To know where to return
         self.color = "red"  # Default color
+        self.waiting = False
 
     def set_route(self, path: List[Tuple[int, int]]):
         """
@@ -29,17 +31,27 @@ class Car:
         self.path = path
         self.path_index = 0
         self.active = True
+        self.waiting = False
+
+    def get_next_position(self) -> Optional[Tuple[int, int]]:
+        """
+        Returns the next position in the path without moving the car.
+        """
+        if not self.active or self.path_index >= len(self.path):
+            return None
+        return self.path[self.path_index]
 
     def move(self):
         """
         Move the car to the next position along its path.
         """
-        # If car has already reached the destination, remain idle
-        if not self.active or self.path_index >= len(self.path):
+        next_pos = self.get_next_position()
+        if next_pos is None:
             return
 
         # Move to the next tile in the path
-        self.position = self.path[self.path_index]
+        self.previous_position = self.position
+        self.position = next_pos
         self.path_index += 1
 
         # Check if the car has finished its journey
