@@ -15,6 +15,7 @@ class ShoppingCenter:
         self.location = location
         self.color = color
         self.pins: List[int] = []  # List of active pins
+        self.dispatched_pins_count = 0 # Number of pins that have a car en route
         self.pin_counter = 0
         self.fulfilled_counter = 0
         self.failure_timer = 0.0
@@ -44,6 +45,7 @@ class ShoppingCenter:
         """
         if self.pins:
             fulfilled_pin = self.pins.pop(0)
+            self.dispatched_pins_count = max(0, self.dispatched_pins_count - 1)
             self.fulfilled_counter += 1
             if len(self.pins) <= self.max_pins // 2:
                 self.is_failing = False

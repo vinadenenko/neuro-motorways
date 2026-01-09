@@ -87,11 +87,19 @@ class SimulationCore:
             if sc.update_failure_timer(0.1):
                 self.is_game_over = True
 
-            if sc.pins:
+            # Calculate how many cars need to be dispatched
+            needed_dispatches = len(sc.pins) - sc.dispatched_pins_count
+            
+            for _ in range(needed_dispatches):
+                dispatched = False
                 # Try to dispatch a car from a house of the SAME color
                 for house in self.houses:
                     if house.color == sc.color and house.dispatch_car(sc.location):
+                        sc.dispatched_pins_count += 1
+                        dispatched = True
                         break
+                if not dispatched:
+                    break # No more cars available to dispatch for this SC right now
 
         # Update score, check game-over logic, and increment simulation time
         self.time_elapsed += 1
