@@ -35,17 +35,17 @@ class SimulationCore:
         """
         return self.traffic_manager.spawn_car(start, destination)
 
-    def add_house(self, position: Tuple[int, int], car_limit: int = 2):
+    def add_house(self, position: Tuple[int, int], color: str = "red", car_limit: int = 2):
         """Adds a house (garage) to the simulation."""
         house_id = f"house_{len(self.houses)}"
-        house = House(house_id, position, self.traffic_manager, car_limit)
+        house = House(house_id, position, self.traffic_manager, color, car_limit)
         self.houses.append(house)
         self.traffic_manager.houses.append(house)
 
-    def add_shopping_center(self, position: Tuple[int, int]):
+    def add_shopping_center(self, position: Tuple[int, int], color: str = "red"):
         """Adds a shopping center to the simulation."""
         sc_id = f"sc_{len(self.shopping_centers)}"
-        shopping_center = ShoppingCenter(sc_id, position)
+        shopping_center = ShoppingCenter(sc_id, position, color)
         self.shopping_centers.append(shopping_center)
         self.traffic_manager.shopping_centers.append(shopping_center)
 
@@ -82,15 +82,22 @@ class SimulationCore:
             
         # Dispatch cars for pending pins
         for sc in self.shopping_centers:
+            # Update failure timer (assuming 1 step = 1 unit of time, but we should use a proper dt)
+            # For simplicity let's say 10 steps = 1 second
+            if sc.update_failure_timer(0.1):
+                self.is_game_over = True
+
             if sc.pins:
-                # Try to dispatch a car from a house
-                # Simple logic: first house that has an idle car and can reach sc
+                # Try to dispatch a car from a house of the SAME color
                 for house in self.houses:
-                    if house.dispatch_car(sc.location):
+                    if house.color == sc.color and house.dispatch_car(sc.location):
                         break
 
         # Update score, check game-over logic, and increment simulation time
         self.time_elapsed += 1
+
+        # Calculate score based on total fulfilled pins
+        self.score = sum(sc.fulfilled_counter for sc in self.shopping_centers)
 
         # Prepare the next WorldState to track game progress
         world_state = WorldState(

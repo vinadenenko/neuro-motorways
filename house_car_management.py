@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from traffic_flow_manager import TrafficFlowManager
 
 class House:
-    def __init__(self, house_id: str, location: Tuple[int, int], traffic_manager: 'TrafficFlowManager', car_count: int = 2):
+    def __init__(self, house_id: str, location: Tuple[int, int], traffic_manager: 'TrafficFlowManager', color: str = "red", car_count: int = 2):
         """
         Initialize a house object (garage).
 
@@ -14,12 +14,16 @@ class House:
             house_id: Unique identifier for this house.
             location: (x, y) location of the house on the grid.
             traffic_manager: Reference to the traffic flow manager for task coordination.
+            color: Color of the house. Should match shopping center color for car dispatch.
             car_count: Number of cars available in the house. Default is 2.
         """
         self.house_id = house_id
         self.location = location
         self.traffic_manager = traffic_manager
+        self.color = color
         self.cars = [Car(car_id=f"{house_id}_{i}", start=location, destination=None, path=[]) for i in range(car_count)]
+        for car in self.cars:
+            car.color = color # Cars inherit house color
         self.idle_cars: List[Car] = list(self.cars)  # Track idle cars
         for car in self.cars:
             car.active = False # Cars in house are initially inactive

@@ -63,8 +63,11 @@ class TrafficFlowManager:
                 if car.state == "ToShoppingCenter":
                     # Car arrived at shopping center, fulfill pin and return home
                     for sc in self.shopping_centers:
-                        if sc.location == car.destination:
-                            sc.fulfill_pin()
+                        # Match location AND color
+                        if sc.location == car.destination and sc.color == car.color:
+                            if sc.fulfill_pin():
+                                # We can't easily return score here, but we can have a callback or just increment a counter in sc
+                                pass
                             break
                     
                     # Set route back home

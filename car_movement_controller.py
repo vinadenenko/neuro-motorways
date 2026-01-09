@@ -20,6 +20,7 @@ class Car:
         self.active = True  # Whether the car is active (reaching the destination or despawned).
         self.state = "Idle"  # Tracks the car's task-based state
         self.origin = start  # To know where to return
+        self.color = "red"  # Default color
 
     def set_route(self, path: List[Tuple[int, int]]):
         """

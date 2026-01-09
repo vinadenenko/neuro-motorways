@@ -1,6 +1,9 @@
 
+from game_clone.visualizer import GameVisualizer
+
 def main() -> None:
-    print("Hello, world!")
+    vis = GameVisualizer()
+    vis.run()
 
 
 if __name__ == "__main__":
