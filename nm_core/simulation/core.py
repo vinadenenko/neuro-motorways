@@ -7,7 +7,7 @@ from nm_core.simulation.traffic import TrafficFlowManager
 from nm_core.simulation.world_state import WorldState
 from nm_core.entities.house import House
 from nm_core.entities.shopping_center import ShoppingCenter
-from nm_common.constants import PIN_GENERATION_INTERVAL
+from nm_common.constants import PIN_GENERATION_INTERVAL, SIMULATION_TICK_RATE
 
 
 class SimulationCore:
@@ -22,6 +22,8 @@ class SimulationCore:
         self.time_elapsed = 0.0
         self.is_game_over = False
         self.pin_generation_interval = PIN_GENERATION_INTERVAL  # Generate a pin every 10 steps
+        self.tick_accumulator = 0.0
+        self.tick_duration = 1.0 / SIMULATION_TICK_RATE
 
     def spawn_car(self, start: Tuple[int, int], destination: Tuple[int, int]) -> bool:
         """
@@ -50,65 +52,52 @@ class SimulationCore:
         self.shopping_centers.append(shopping_center)
         self.traffic_manager.shopping_centers.append(shopping_center)
 
-    def step(self, action: Optional[Action]) -> Tuple[WorldState, float, bool, Dict]:
+    def step(self, action: Optional[Action], dt: Optional[float] = None) -> Tuple[WorldState, float, bool, Dict]:
         """
-        Executes a single simulation step.
+        Executes simulation steps based on elapsed time.
 
         Args:
             action: Action object specifying the player's or AI's move. Could be None.
+            dt: Time elapsed since the last step in seconds. If None, exactly one logic tick is executed.
 
         Returns:
-            Tuple:
-                - WorldState: Updated game state.
-                - Reward: Reward for the action (if training an AI environment).
-                - Done: Whether the game is over.
-                - Info: Additional metadata for debugging.
+            Tuple: WorldState, Reward, Done, Info.
         """
-        # Process player/AI action if provided
+        # Process player/AI action if provided (actions happen immediately)
         if action is not None:
-            if action.action_type == 'add_road':  # Example action: Add a new road
+            if action.action_type == 'add_road':
                 self.road_network.add_road(action.params['start'], action.params['end'])
-            elif action.action_type == 'remove_road':  # Example action: Remove an existing road
+            elif action.action_type == 'remove_road':
                 self.road_network.remove_road(action.params['start'], action.params['end'])
-            # Additional action handlers could be added here.
 
-        # Update traffic flow
-        self.traffic_manager.update()
+        if dt is None:
+            # Legacy/Test mode: execute exactly one logic tick
+            self._logic_tick()
+            # Still update failure timers with a default tick duration
+            for sc in self.shopping_centers:
+                if sc.update_failure_timer(self.tick_duration):
+                    self.is_game_over = True
+        else:
+            # Real-time mode: accumulate and execute ticks
+            for sc in self.shopping_centers:
+                if sc.update_failure_timer(dt):
+                    self.is_game_over = True
 
-        # Update pins and dispatch cars
-        if self.pin_generation_interval > 0 and int(self.time_elapsed) > 0 and int(self.time_elapsed) % self.pin_generation_interval == 0 and self.shopping_centers:
-            import random
-            sc = random.choice(self.shopping_centers)
-            sc.generate_pin()
+            self.tick_accumulator += dt
+            # Robustness: Cap the number of logic ticks per frame to prevent "Spiral of Death" 
+            # if the CPU lags significantly.
+            max_ticks_per_frame = 5 
+            ticks_processed = 0
+            while self.tick_accumulator >= self.tick_duration and ticks_processed < max_ticks_per_frame:
+                self.tick_accumulator -= self.tick_duration
+                self._logic_tick()
+                ticks_processed += 1
             
-        # Dispatch cars for pending pins
-        for sc in self.shopping_centers:
-            # Update failure timer (assuming 1 step = 1 unit of time, but we should use a proper dt)
-            # For simplicity let's say 10 steps = 1 second
-            if sc.update_failure_timer(0.1):
-                self.is_game_over = True
+            # If we hit the cap, discard remaining time to keep the game playable
+            if ticks_processed >= max_ticks_per_frame:
+                self.tick_accumulator = 0.0
 
-            # Calculate how many cars need to be dispatched
-            needed_dispatches = len(sc.pins) - sc.dispatched_pins_count
-            
-            for _ in range(needed_dispatches):
-                dispatched = False
-                # Try to dispatch a car from a house of the SAME color
-                for house in self.houses:
-                    if house.color == sc.color and house.dispatch_car(sc.location):
-                        sc.dispatched_pins_count += 1
-                        dispatched = True
-                        break
-                if not dispatched:
-                    break # No more cars available to dispatch for this SC right now
-
-        # Update score, check game-over logic, and increment simulation time
-        self.time_elapsed += 1
-
-        # Calculate score based on total fulfilled pins
-        self.score = sum(sc.fulfilled_counter for sc in self.shopping_centers)
-
-        # Prepare the next WorldState to track game progress
+        # Prepare the next WorldState
         world_state = WorldState(
             map_data=self.map.grid,
             cars=self.traffic_manager.get_cars(),
@@ -126,4 +115,37 @@ class SimulationCore:
         )
 
         return world_state, 0, self.is_game_over, {}
+
+    def _logic_tick(self):
+        """Internal logic tick executed at SIMULATION_TICK_RATE."""
+        # Update traffic flow
+        self.traffic_manager.update()
+
+        # Update pins and dispatch cars
+        if self.pin_generation_interval > 0 and int(self.time_elapsed) > 0 and int(self.time_elapsed) % self.pin_generation_interval == 0 and self.shopping_centers:
+            import random
+            sc = random.choice(self.shopping_centers)
+            sc.generate_pin()
+            
+        # Dispatch cars for pending pins
+        for sc in self.shopping_centers:
+            # Calculate how many cars need to be dispatched
+            needed_dispatches = len(sc.pins) - sc.dispatched_pins_count
+            
+            for _ in range(needed_dispatches):
+                dispatched = False
+                # Try to dispatch a car from a house of the SAME color
+                for house in self.houses:
+                    if house.color == sc.color and house.dispatch_car(sc.location):
+                        sc.dispatched_pins_count += 1
+                        dispatched = True
+                        break
+                if not dispatched:
+                    break # No more cars available to dispatch for this SC right now
+
+        # Increment simulation time (ticks)
+        self.time_elapsed += 1
+
+        # Calculate score based on total fulfilled pins
+        self.score = sum(sc.fulfilled_counter for sc in self.shopping_centers)
 

@@ -2,11 +2,10 @@ import pygame
 import sys
 import time
 from nm_core.simulation.core import SimulationCore
-from nm_common.constants import GRID_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, COLOR_MAP
+from nm_common.constants import GRID_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, COLOR_MAP, FPS
+from nm_common.runner import SimulationRunner
 
-FPS = 5
-
-def render(sim, screen, font, world_state):
+def render(sim, screen, world_state):
     screen.fill(COLOR_MAP["bg"])
     
     # Draw roads
@@ -27,7 +26,6 @@ def render(sim, screen, font, world_state):
         pygame.draw.rect(screen, COLOR_MAP.get(sc.color, (0,0,0)), rect)
 
     # Draw cars
-    # Sort cars by ID to make rendering consistent
     sorted_cars = sorted(world_state.cars, key=lambda x: x['car_id'])
     for car_data in sorted_cars:
         pos = car_data['position']
@@ -56,46 +54,15 @@ def render(sim, screen, font, world_state):
         if car_data.get('waiting', False):
             pygame.draw.rect(screen, (255, 255, 255), (px, py, 10, 10), 1)
 
-    pygame.display.flip()
-
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Traffic Jam & Two-Sided Road Test")
-    font = pygame.font.SysFont("Arial", 18)
-    clock = pygame.time.Clock()
 
     sim = SimulationCore(SCREEN_WIDTH // GRID_SIZE, SCREEN_HEIGHT // GRID_SIZE)
-    sim.pin_generation_interval = 999999 
-
-    # Scenario: 
-    # Two houses on opposite ends of a long road.
-    # House 1 at (2, 5), SC 1 at (15, 5) - RED
-    # House 2 at (15, 5) [actually SC 2], SC 2 at (2, 5) [actually House 2] - BLUE
+    sim.pin_generation_interval = 0 # Disable auto pins
     
-    sim.add_house((2, 5), color="red", car_limit=5)
-    sim.add_shopping_center((15, 5), color="red")
-    
-    sim.add_house((15, 6), color="blue", car_limit=5)
-    sim.add_shopping_center((2, 6), color="blue")
-
-    # Add road for RED: (2,5) <-> (15,5)
-    for x in range(2, 15):
-        sim.road_network.add_road((x, 5), (x + 1, 5))
-        sim.road_network.add_road((x + 1, 5), (x, 5))
-
-    # Add road for BLUE: (2,6) <-> (15,6)
-    for x in range(2, 15):
-        sim.road_network.add_road((x, 6), (x + 1, 6))
-        sim.road_network.add_road((x + 1, 6), (x, 6))
-        
-    # Connector roads to make them cross if we wanted, but let's first test simple jamming
-    # Let's make them share the SAME ROAD segment
-    # (5, 5) <-> (10, 5) used by both?
-    # Actually let's just use one road for both colors.
-    
-    # Scenario: Crossroad Jam
-    sim.road_network.reset()
+    # Scenario setup (Crossroad Jam)
     # Horizontal road at y=5
     for x in range(1, 18):
         sim.road_network.add_road((x, 5), (x + 1, 5))
@@ -106,11 +73,6 @@ def main():
         sim.road_network.add_road((8, y), (8, y + 1))
         sim.road_network.add_road((8, y + 1), (8, y))
 
-    sim.houses = []
-    sim.shopping_centers = []
-    sim.traffic_manager.houses = []
-    sim.traffic_manager.shopping_centers = []
-    
     # Red: Left to Right
     sim.add_house((2, 5), color="red", car_limit=10)
     sim.add_shopping_center((15, 5), color="red")
@@ -127,40 +89,30 @@ def main():
     sim.add_house((8, 8), color="yellow", car_limit=10)
     sim.add_shopping_center((8, 1), color="yellow")
 
-    running = True
-    step_count = 0
     total_generated = 0
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    step_count = 0
 
-        if step_count == 2:
-            # Generate many pins to trigger multiple cars
-            for sc in sim.shopping_centers:
+    def update_logic(sim, dt):
+        nonlocal total_generated, step_count
+        if step_count == 10: # At some point generate pins
+             for sc in sim.shopping_centers:
                 for _ in range(8):
                     sc.generate_pin()
                     total_generated += 1
-            print(f"Total pins generated manually: {total_generated}")
-
-        world_state, _, _, _ = sim.step(None)
-        render(sim, screen, font, world_state)
-        step_count += 1
-        clock.tick(FPS)
+             print(f"Total pins generated manually: {total_generated}")
         
-        # Monitor progress
-        if step_count % 20 == 0:
+        if step_count % 100 == 0 and step_count > 0:
             total_pins = sum(len(sc.pins) for sc in sim.shopping_centers)
             total_fulfilled = sum(sc.fulfilled_counter for sc in sim.shopping_centers)
             print(f"Step {step_count}: Pending Pins={total_pins}, Fulfilled={total_fulfilled}")
+        
+        step_count += 1
 
-        if step_count > 150: # Increased to 400 steps
-            running = False
+    runner = SimulationRunner(sim, fps=FPS) # Use lower FPS for easier observation
+    runner.run(render_callback=render, update_callback=update_logic, max_steps=800)
 
     final_fulfilled = sum(sc.fulfilled_counter for sc in sim.shopping_centers)
     print(f"Final Report: Generated={total_generated}, Fulfilled={final_fulfilled}")
-    if final_fulfilled > total_generated:
-        print("WARNING: More pins fulfilled than manually generated! Checking for automatic generation...")
     
     pygame.quit()
 

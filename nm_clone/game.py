@@ -11,15 +11,15 @@ class MiniMotorwaysGame:
         # Initial setup: one shopping center and one house of the same color
         self.growth_manager.spawn_shopping_center()
         
-    def step(self, action=None):
+    def step(self, action=None, dt=0.0):
         if not self.is_running:
             return None, 0, True, {}
             
         # Execute simulation step
-        world_state, reward, done, info = self.sim.step(action)
+        world_state, reward, done, info = self.sim.step(action, dt=dt)
         
         # Update growth
-        self.growth_manager.update()
+        self.growth_manager.update(dt=dt)
         
         if done:
             self.is_running = False

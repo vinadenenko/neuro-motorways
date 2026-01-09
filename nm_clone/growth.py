@@ -9,22 +9,20 @@ class GrowthManager:
         self.difficulty = difficulty
         self.colors = ["red", "blue", "green", "yellow", "purple"]
         self.active_colors = []
-        self.step_counter = 0
-        self.growth_interval = 200 # Spawn something every 200 steps
+        self.time_accumulator = 0.0
+        self.growth_interval = 13.0 # Spawn something every 13 seconds roughly
         
         # Difficulty multipliers for "need"
-        # easy: 2.0x needed houses
-        # medium: 1.2x needed houses
-        # hard: 1.0x needed houses (bare minimum)
         self.difficulty_multipliers = {
             'easy': 2.0,
             'medium': 1.2,
             'hard': 1.0
         }
-
-    def update(self):
-        self.step_counter += 1
-        if self.step_counter % self.growth_interval == 0:
+        
+    def update(self, dt=0.0):
+        self.time_accumulator += dt
+        if self.time_accumulator >= self.growth_interval:
+            self.time_accumulator -= self.growth_interval
             self.spawn_new_building()
             
     def _calculate_needs(self) -> dict:

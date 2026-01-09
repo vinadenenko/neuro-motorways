@@ -16,13 +16,13 @@ class GameVisualizer:
 
     def run(self):
         while self.running:
+            dt = self.clock.tick(FPS) / 1000.0
             self.handle_input()
-            world_state, _, done, _ = self.game.step()
+            world_state, _, done, _ = self.game.step(dt=dt)
             self.render(world_state)
             if done:
                 print(f"Game Over! Final Score: {world_state.score}")
                 self.running = False
-            self.clock.tick(FPS)
         
         # Keep window open for a bit after game over
         pygame.time.wait(2000)
